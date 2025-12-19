@@ -134,7 +134,18 @@ if not st.session_state.selected_pokemon:
                     gemini_data = utils.identify_pokemon_with_gemini(api_key, img, "models/gemini-2.5-flash")
                     
                     if "error" in gemini_data:
-                        st.error(f"Error: {gemini_data['error']}")
+                        error_msg = gemini_data['error'].lower()
+                        
+                        # Check for quota errors
+                        if "quota" in error_msg or "resource_exhausted" in error_msg or "429" in error_msg:
+                            st.warning("⏰ **Has usado demasiado el Pokédex**")
+                            st.info("🔄 Vuelve en **1-2 minutos** y podrás seguir identificando Pokémon")
+                            st.caption("💡 La versión gratuita tiene un límite de 15 búsquedas por minuto")
+                        elif "api_key" in error_msg or "invalid" in error_msg:
+                            st.error("🔑 **API Key no válida**")
+                            st.info("Verifica que tu API Key esté correctamente configurada")
+                        else:
+                            st.error(f"❌ Error: {gemini_data['error']}")
                     else:
                         nombre_ingles = gemini_data.get('nombre_ingles')
                         if nombre_ingles:
@@ -142,11 +153,19 @@ if not st.session_state.selected_pokemon:
                             st.session_state.last_scan = gemini_data.get('anime_debut', 'Información no disponible')
                             st.rerun()
                         else:
-                            st.error("No se pudo identificar el Pokémon.")
+                            st.error("🤔 No se pudo identificar el Pokémon. Intenta con mejor iluminación.")
                 except Exception as e:
-                    st.error(f"Error: {str(e)}")
+                    error_str = str(e).lower()
+                    
+                    # Check for quota errors in exception
+                    if "quota" in error_str or "resource_exhausted" in error_str or "429" in error_str:
+                        st.warning("⏰ **Has usado demasiado el Pokédex**")
+                        st.info("🔄 Vuelve en **1-2 minutos** y podrás seguir identificando Pokémon")
+                        st.caption("💡 La versión gratuita tiene un límite de 15 búsquedas por minuto")
+                    else:
+                        st.error(f"❌ Error inesperado: {str(e)}")
     elif camera_img and not api_key:
-        st.warning("⚠️ Por favor ingresa tu API Key en el sidebar")
+        st.warning("⚠️ Por favor configura tu API Key")
     
 # --- Display Pokemon ---
 if st.session_state.selected_pokemon and api_key:
