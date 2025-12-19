@@ -113,25 +113,36 @@ with st.sidebar:
     else:
         st.info("Aún no has guardado ningún Pokémon")
 
-# --- Get API Key from secrets ---
-api_key = st.secrets.get("GOOGLE_API_KEY", "")
+# --- Get API Keys from secrets (supports multiple keys) ---
+api_keys = []
 
-if not api_key:
+# Try to load multiple API keys
+for i in range(1, 6):  # Support up to 5 API keys
+    key_name = f"GOOGLE_API_KEY_{i}" if i > 1 else "GOOGLE_API_KEY"
+    key = st.secrets.get(key_name, "")
+    if key:
+        api_keys.append(key)
+
+if not api_keys:
     st.error("⚠️ API Key no configurada. Agrega GOOGLE_API_KEY en .streamlit/secrets.toml")
     st.stop()
+
+# Show how many API keys are loaded (for debugging)
+if len(api_keys) > 1:
+    st.sidebar.caption(f"🔑 {len(api_keys)} API Keys configuradas")
 
 # --- Input Section ---
 if not st.session_state.selected_pokemon:
     st.subheader("📸 Toma una Foto")
     camera_img = st.camera_input("Usa tu cámara para identificar un Pokémon")
     
-    if camera_img and api_key:
+    if camera_img and api_keys:
         img = Image.open(camera_img)
         
         if st.button("🔍 Identificar Pokémon", use_container_width=True):
             with st.spinner("Analizando con Gemini AI..."):
                 try:
-                    gemini_data = utils.identify_pokemon_with_gemini(api_key, img, "models/gemini-2.5-flash")
+                    gemini_data = utils.identify_pokemon_with_gemini(api_keys, img, "models/gemini-2.5-flash")
                     
                     if "error" in gemini_data:
                         error_msg = gemini_data['error'].lower()
@@ -164,11 +175,11 @@ if not st.session_state.selected_pokemon:
                         st.caption("💡 La versión gratuita tiene un límite de 15 búsquedas por minuto")
                     else:
                         st.error(f"❌ Error inesperado: {str(e)}")
-    elif camera_img and not api_key:
+    elif camera_img and not api_keys:
         st.warning("⚠️ Por favor configura tu API Key")
     
 # --- Display Pokemon ---
-if st.session_state.selected_pokemon and api_key:
+if st.session_state.selected_pokemon and api_keys:
     nombre_ingles = st.session_state.selected_pokemon
     anime_debut = st.session_state.last_scan or "De la línea evolutiva"
     

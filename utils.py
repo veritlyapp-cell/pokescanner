@@ -42,7 +42,73 @@ def get_available_models(api_key):
     except:
         return []
 
-def identify_pokemon_with_gemini(api_key, image, model_name='models/gemini-2.5-flash'):
+def identify_pokemon_with_gemini(api_keys, image, model_name='models/gemini-2.5-flash'):
+    """
+    Identifies a Pokemon using Google Gemini AI with automatic API key rotation.
+    Tries multiple API keys if quota is exceeded.
+    
+    Args:
+        api_keys: Single API key string or list of API keys
+        image: PIL Image object
+        model_name: Gemini model to use
+    
+    Returns:
+        dict with pokemon data or error message
+    """
+    # Convert single key to list for uniform handling
+    if isinstance(api_keys, str):
+        api_keys = [api_keys]
+    
+    last_error = None
+    
+    # Try each API key in order
+    for idx, api_key in enumerate(api_keys):
+        try:
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel(model_name)
+            
+            prompt = """
+            Analiza esta imagen y responde SOLO con un JSON válido (sin markdown, sin ```json, sin explicaciones).
+            
+            {
+                "nombre_ingles": "nombre oficial en inglés (ej: pikachu)",
+                "anime_debut": "episodio de debut en el anime (ej: EP001: Pokémon! I Choose You!)"
+            }
+            
+            IMPORTANTE: Responde ÚNICAMENTE el JSON, nada más.
+            """
+            
+            response = model.generate_content([prompt, image])
+            raw_response = response.text.strip()
+            
+            # Clean response
+            cleaned = raw_response.replace('```json', '').replace('```', '').strip()
+            if cleaned.startswith("'") and cleaned.endswith("'"):
+                cleaned = cleaned[1:-1]
+            elif cleaned.startswith('"') and cleaned.endswith('"'):
+                cleaned = cleaned[1:-1]
+            
+            pokemon_data = json.loads(cleaned)
+            return pokemon_data
+            
+        except Exception as e:
+            error_str = str(e).lower()
+            last_error = str(e)
+            
+            # Check if it's a quota error
+            if "quota" in error_str or "resource_exhausted" in error_str or "429" in error_str:
+                # If not the last key, try next one
+                if idx < len(api_keys) - 1:
+                    continue  # Try next API key
+                else:
+                    # All keys exhausted
+                    return {"error": "QUOTA_EXCEEDED"}
+            else:
+                # Other error, don't try other keys
+                return {"error": str(e)}
+    
+    # If we get here, all keys failed
+    return {"error": last_error if last_error else "Unknown error"}
     """
     Identifies a Pokemon from an image using the specified Gemini model.
     Returns: dict with 'nombre_ingles' and 'anime_debut'.
