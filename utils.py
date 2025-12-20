@@ -109,45 +109,6 @@ def identify_pokemon_with_gemini(api_keys, image, model_name='models/gemini-2.5-
     
     # If we get here, all keys failed
     return {"error": last_error if last_error else "Unknown error"}
-    """
-    Identifies a Pokemon from an image using the specified Gemini model.
-    Returns: dict with 'nombre_ingles' and 'anime_debut'.
-    """
-    try:
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel(model_name)
-        
-        prompt = (
-            "Identifica este pokemon. "
-            "Devuelve SOLO un JSON válido con este formato exacto (usa comillas dobles): "
-            '{"nombre_ingles": "pikachu", "anime_debut": "Temporada 1"}'
-        )
-        
-        response = model.generate_content([prompt, image])
-        
-        # Clean response text
-        text = response.text.strip()
-        
-        # Remove markdown code blocks if present
-        if text.startswith("```json"):
-            text = text[7:]
-        elif text.startswith("```"):
-            text = text[3:]
-        if text.endswith("```"):
-            text = text[:-3]
-        
-        text = text.strip()
-        
-        # Try to parse directly first
-        try:
-            return json.loads(text)
-        except json.JSONDecodeError:
-            # If it fails, try replacing single quotes with double quotes
-            text = text.replace("'", '"')
-            return json.loads(text)
-            
-    except Exception as e:
-        return {"error": str(e)}
 
 @st.cache_data(ttl=3600)  # Cache for 1 hour
 def get_pokemon_data(name):
