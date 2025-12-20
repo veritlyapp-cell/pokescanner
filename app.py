@@ -147,11 +147,14 @@ if not st.session_state.selected_pokemon:
                     if "error" in gemini_data:
                         error_msg = gemini_data['error'].lower()
                         
-                        # Check for quota errors
-                        if "quota" in error_msg or "resource_exhausted" in error_msg or "429" in error_msg:
+                        # Check for quota errors - includes the QUOTA_EXCEEDED flag from rotation
+                        if "quota" in error_msg or "resource_exhausted" in error_msg or "429" in error_msg or error_msg == "quota_exceeded":
                             st.warning("⏰ **Has usado demasiado el Pokédex**")
                             st.info("🔄 Vuelve en **1-2 minutos** y podrás seguir identificando Pokémon")
                             st.caption("💡 La versión gratuita tiene un límite de 15 búsquedas por minuto")
+                            # Show debug info if multiple keys configured
+                            if len(api_keys) > 1:
+                                st.caption(f"⚠️ Todas las {len(api_keys)} API Keys han alcanzado el límite diario")
                         elif "api_key" in error_msg or "invalid" in error_msg:
                             st.error("🔑 **API Key no válida**")
                             st.info("Verifica que tu API Key esté correctamente configurada")
