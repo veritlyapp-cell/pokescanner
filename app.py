@@ -134,6 +134,21 @@ if len(api_keys) > 1:
 # --- Input Section ---
 if not st.session_state.selected_pokemon:
     st.subheader("📸 Toma una Foto")
+    
+    # Camera switching tip for mobile
+    with st.expander("💡 ¿Cómo cambiar de cámara en tablet/celular?"):
+        st.markdown("""
+        **Para cambiar entre cámara frontal y trasera:**
+        
+        1. **En el navegador**, cuando la cámara se active, busca el ícono de cambiar cámara (🔄 o 🔁)
+        2. **Chrome/Safari**: Aparece arriba o al lado del preview de cámara
+        3. **Si no aparece**: Presiona y mantén el botón de la cámara para ver opciones
+        
+        **Alternativa:**
+        - Saca una foto con la app de cámara de tu tablet
+        - Luego súbela desde la galería (próximamente)
+        """)
+    
     camera_img = st.camera_input("Usa tu cámara para identificar un Pokémon")
     
     if camera_img and api_keys:
