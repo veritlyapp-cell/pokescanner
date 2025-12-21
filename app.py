@@ -133,26 +133,37 @@ if len(api_keys) > 1:
 
 # --- Input Section ---
 if not st.session_state.selected_pokemon:
-    st.subheader("📸 Toma una Foto")
+    st.subheader("📸 Identifica un Pokémon")
     
-    # Camera switching tip for mobile
-    with st.expander("💡 ¿Cómo cambiar de cámara en tablet/celular?"):
-        st.markdown("""
-        **Para cambiar entre cámara frontal y trasera:**
+    # Toggle between camera and file upload
+    input_method = st.radio(
+        "Elige cómo tomar la foto:",
+        ["📷 Cámara", "🖼️ Subir desde galería"],
+        horizontal=True
+    )
+    
+    img_input = None
+    
+    if input_method == "📷 Cámara":
+        # Camera switching tip for mobile
+        with st.expander("💡 ¿Cómo cambiar de cámara?"):
+            st.markdown("""
+            Cuando la cámara se active, busca el ícono 🔄 en el preview para cambiar entre cámara frontal y trasera.
+            
+            Si no aparece, prueba la opción **"Subir desde galería"** arriba.
+            """)
         
-        1. **En el navegador**, cuando la cámara se active, busca el ícono de cambiar cámara (🔄 o 🔁)
-        2. **Chrome/Safari**: Aparece arriba o al lado del preview de cámara
-        3. **Si no aparece**: Presiona y mantén el botón de la cámara para ver opciones
-        
-        **Alternativa:**
-        - Saca una foto con la app de cámara de tu tablet
-        - Luego súbela desde la galería (próximamente)
-        """)
+        img_input = st.camera_input("Toma una foto del Pokémon")
+    else:
+        st.info("📱 Saca la foto con la app de cámara de tu dispositivo y súbela aquí")
+        img_input = st.file_uploader(
+            "Selecciona una imagen", 
+            type=["jpg", "jpeg", "png", "webp"],
+            help="Sube una foto desde tu galería"
+        )
     
-    camera_img = st.camera_input("Usa tu cámara para identificar un Pokémon")
-    
-    if camera_img and api_keys:
-        img = Image.open(camera_img)
+    if img_input and api_keys:
+        img = Image.open(img_input)
         
         if st.button("🔍 Identificar Pokémon", use_container_width=True):
             with st.spinner("Analizando con Gemini AI..."):
@@ -193,7 +204,7 @@ if not st.session_state.selected_pokemon:
                         st.caption("💡 La versión gratuita tiene un límite de 15 búsquedas por minuto")
                     else:
                         st.error(f"❌ Error inesperado: {str(e)}")
-    elif camera_img and not api_keys:
+    elif img_input and not api_keys:
         st.warning("⚠️ Por favor configura tu API Key")
     
 # --- Display Pokemon ---

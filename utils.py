@@ -95,10 +95,14 @@ def identify_pokemon_with_gemini(api_keys, image, model_name='models/gemini-2.5-
             error_str = str(e).lower()
             last_error = str(e)
             
+            # Debug: show which key failed
+            print(f"DEBUG: API Key #{idx+1} failed with error: {error_str[:100]}")
+            
             # Check if it's a quota error
             if "quota" in error_str or "resource_exhausted" in error_str or "429" in error_str:
                 # If not the last key, try next one
                 if idx < len(api_keys) - 1:
+                    print(f"DEBUG: Trying next API key (#{idx+2})...")
                     continue  # Try next API key
                 else:
                     # All keys exhausted
